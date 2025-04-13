@@ -24,7 +24,39 @@ const app = express();
 
 app.use(express.json({limit:"10mb"}));
 app.use(cookieParser());
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+
+// Replace your current CORS setup with this:
+
+// Parse allowed origins from environment variable
+const allowedOrigins = process.env.CLIENT_URL?.split(',') || [];
+
+// Enhanced CORS middleware
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.some(allowedOrigin => {
+      // Compare origins with protocol variations
+      const normalizedAllowed = allowedOrigin.replace(/\/$/, '');
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      return normalizedOrigin === normalizedAllowed;
+    })) {
+      return callback(null, true);
+    }
+    
+    console.error(`CORS blocked for origin: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Authorization']
+}));
+
+// Explicitly handle OPTIONS requests
+app.options('*', cors());
 
 // ✅ Add express-session middleware BEFORE passport.initialize()
 app.use(
