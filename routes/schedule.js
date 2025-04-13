@@ -47,7 +47,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     uploadStream.end(req.file.buffer, async () => {
       const fileId = uploadStream.id; // Get the file ID
-      const fileUrl = `http://localhost:5000/schedules/file/${fileId}`;
+      const fileUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/schedules/file/${fileId}`;
 
       // Save schedule details to MongoDB
       const newSchedule = new Schedule({
